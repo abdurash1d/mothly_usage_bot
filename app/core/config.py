@@ -1,4 +1,3 @@
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,16 +15,15 @@ class Settings(BaseSettings):
 
     timezone: str = "Asia/Tashkent"
 
-    @field_validator("database_url", mode="before")
-    @classmethod
-    def normalize_database_url(cls, value: str) -> str:
-        if not isinstance(value, str):
-            return value
-        if value.startswith("postgresql://"):
-            return value.replace("postgresql://", "postgresql+psycopg://", 1)
-        if value.startswith("postgres://"):
-            return value.replace("postgres://", "postgresql+psycopg://", 1)
-        return value
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        # Render/Postgres often provides postgres:// or postgresql://
+        # SQLAlchemy with psycopg driver should use postgresql+psycopg://
+        if self.database_url.startswith("postgres://"):
+            return self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        if self.database_url.startswith("postgresql://") and "+psycopg" not in self.database_url:
+            return self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return self.database_url
 
 
 settings = Settings()
