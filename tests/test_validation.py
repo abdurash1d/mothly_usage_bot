@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 from pydantic import ValidationError
 
-from app.schemas import ExpenseCreate
+from app.schemas import ExpenseCreate, ExpenseUpdate, IncomeCreate, IncomeUpdate
 
 
 def test_expense_validation_success():
@@ -31,3 +31,31 @@ def test_expense_validation_amount_positive():
             amount_uzs=0,
             expense_date=date(2026, 5, 1),
         )
+
+
+def test_income_validation_success():
+    payload = IncomeCreate(
+        income_type_key="salary",
+        amount_uzs=2500000,
+        income_date=date(2026, 5, 1),
+    )
+    assert payload.amount_uzs == 2500000
+
+
+def test_income_validation_invalid_type():
+    with pytest.raises(ValidationError):
+        IncomeCreate(
+            income_type_key="gift",
+            amount_uzs=500000,
+            income_date=date(2026, 5, 1),
+        )
+
+
+def test_expense_update_validation_amount_positive():
+    with pytest.raises(ValidationError):
+        ExpenseUpdate(amount_uzs=0)
+
+
+def test_income_update_validation_invalid_type():
+    with pytest.raises(ValidationError):
+        IncomeUpdate(income_type_key="gift")

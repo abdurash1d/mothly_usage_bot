@@ -10,7 +10,7 @@ from app.api.routes import router as api_router
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine, get_db
-from app.models import Expense, User  # noqa: F401
+from app.models import Expense, Income, User  # noqa: F401
 from app.services.auth import ensure_owner, get_or_create_user
 from app.services.telegram import send_message, set_webhook
 
@@ -70,7 +70,20 @@ async def telegram_webhook(update: dict, db: Session = Depends(get_db)):
     elif text.startswith("/help"):
         await send_message(
             chat_id,
-            "Команды:\n/start — открыть мини-приложение\n/help — помощь",
+            "Помощь / Yordam:\n"
+            "/start — открыть мини-приложение / mini-ilovani ochish\n"
+            "/help — эта подсказка / shu yordam matni\n\n"
+            "Как использовать / Qanday ishlatish:\n"
+            "1) Добавьте расход в разделе «Добавить расход».\n"
+            "   1) «Xarajat qo‘shish» bo‘limida xarajat kiriting.\n"
+            "2) Добавьте доход (salary/bonus/KPI) в разделе «Добавить доход».\n"
+            "   2) «Daromad qo‘shish» bo‘limida salary/bonus/KPI kiriting.\n"
+            "3) В «Сводка за месяц» выберите год и месяц, нажмите «Обновить».\n"
+            "   3) «Oylik hisobot»da yil va oyni tanlab «Yangilash» bosing.\n"
+            "4) В «Операции за месяц» можно исправить или удалить ошибочную запись.\n"
+            "   4) «Oylik operatsiyalar»da noto‘g‘ri yozuvni tahrirlash yoki o‘chirish mumkin.\n"
+            "Сводка и график обновляются автоматически после изменений.\n"
+            "O‘zgartirishdan keyin hisobot va grafik avtomatik yangilanadi.",
         )
 
     return JSONResponse({"ok": True})

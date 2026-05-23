@@ -10,38 +10,89 @@
   </head>
   <body>
     <main class="container">
-      <h1>Ежемесячные расходы</h1>
-      <p class="sub">Валюта: UZS</p>
+      <header class="hero card">
+        <h1>Money Flow · Ежемесячные расходы</h1>
+        <p class="sub">Billing dashboard · Валюта: UZS</p>
+      </header>
 
-      <section class="card">
-        <h2>Добавить расход</h2>
-        <form id="expenseForm">
-          <label>Категория
-            <select id="category" required></select>
-          </label>
-          <label>Сумма (UZS)
-            <input id="amount" type="number" min="1" step="1" required />
-          </label>
-          <label>Дата
-            <input id="expenseDate" type="date" required />
-          </label>
-          <label>Комментарий
-            <input id="note" type="text" maxlength="1024" placeholder="Необязательно" />
-          </label>
-          <button type="submit">Сохранить</button>
-        </form>
-        <p id="formStatus"></p>
+      <section class="kpis">
+        <article class="kpi kpi-income">
+          <h3>Доход</h3>
+          <p id="incomeTotal" class="kpi-value">0 UZS</p>
+          <span id="incomeCount" class="kpi-meta">записей: 0</span>
+        </article>
+        <article class="kpi kpi-expense">
+          <h3>Расход</h3>
+          <p id="expenseTotal" class="kpi-value">0 UZS</p>
+          <span id="expenseCount" class="kpi-meta">записей: 0</span>
+        </article>
+        <article class="kpi kpi-balance" id="balanceCard">
+          <h3>Баланс</h3>
+          <p id="balanceTotal" class="kpi-value">0 UZS</p>
+          <span class="kpi-meta">income - expense</span>
+        </article>
       </section>
 
       <section class="card">
-        <h2>Сводка за месяц</h2>
+        <h2>Сводка за месяц / Oylik hisobot</h2>
         <div class="filters">
           <input id="year" type="number" min="2020" max="2100" value="{{ year }}" />
           <input id="month" type="number" min="1" max="12" value="{{ month }}" />
-          <button id="reloadBtn">Обновить</button>
+          <button id="reloadBtn" type="button">Обновить</button>
         </div>
-        <p id="monthTotal"></p>
+      </section>
+
+      <section class="split-grid">
+        <section class="card">
+          <h2>Добавить расход</h2>
+          <form id="expenseForm">
+            <label>Категория
+              <select id="category" required></select>
+            </label>
+            <label>Сумма (UZS)
+              <input id="amount" type="number" min="1" step="1" required />
+            </label>
+            <label>Дата
+              <input id="expenseDate" type="date" required />
+            </label>
+            <label>Комментарий
+              <input id="note" type="text" maxlength="1024" placeholder="Необязательно" />
+            </label>
+            <button type="submit">Сохранить расход</button>
+          </form>
+          <p id="formStatus" class="status"></p>
+        </section>
+
+        <section class="card">
+          <h2>Добавить доход / Daromad qo‘shish</h2>
+          <form id="incomeForm">
+            <label>Тип дохода / Daromad turi
+              <select id="incomeType" required></select>
+            </label>
+            <label>Сумма (UZS)
+              <input id="incomeAmount" type="number" min="1" step="1" required />
+            </label>
+            <label>Дата / Sana
+              <input id="incomeDate" type="date" required />
+            </label>
+            <label>Комментарий / Izoh
+              <input id="incomeNote" type="text" maxlength="1024" placeholder="Необязательно / Ixtiyoriy" />
+            </label>
+            <button type="submit">Сохранить доход</button>
+          </form>
+          <p id="incomeFormStatus" class="status"></p>
+        </section>
+      </section>
+
+      <section class="card">
+        <h2>Категории расходов</h2>
         <ul id="categoryList"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Операции за месяц / Oylik operatsiyalar</h2>
+        <p id="ledgerStatus" class="status"></p>
+        <div id="ledgerList" class="ledger-list"></div>
       </section>
 
       <section class="card">
@@ -66,13 +117,33 @@
       };
 
       const fmtUZS = (num) => `${new Intl.NumberFormat("ru-RU").format(num)} UZS`;
+      const fmtDate = (val) => new Date(val).toISOString().slice(0, 10);
+      const escapeHtml = (str) => (str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+      let categories = [];
+      let incomeTypes = [];
+      let chart;
+      let editingEntryKey = null;
+
+      function currentFilters() {
+        return {
+          year: document.getElementById("year").value,
+          month: document.getElementById("month").value,
+        };
+      }
 
       async function loadCategories() {
         const res = await fetch(`${apiBase}/categories`);
         const data = await res.json();
+        categories = data.categories;
         const select = document.getElementById("category");
         select.innerHTML = "";
-        data.categories.forEach((c) => {
+        categories.forEach((c) => {
           const opt = document.createElement("option");
           opt.value = c.key;
           opt.textContent = c.label_ru;
@@ -80,7 +151,20 @@
         });
       }
 
-      let chart;
+      async function loadIncomeTypes() {
+        const res = await fetch(`${apiBase}/income-types`);
+        const data = await res.json();
+        incomeTypes = data.income_types;
+        const select = document.getElementById("incomeType");
+        select.innerHTML = "";
+        incomeTypes.forEach((t) => {
+          const opt = document.createElement("option");
+          opt.value = t.key;
+          opt.textContent = `${t.label_ru} / ${t.label_uz}`;
+          select.appendChild(opt);
+        });
+      }
+
       function drawChart(labels, values) {
         const ctx = document.getElementById("expenseChart");
         if (chart) chart.destroy();
@@ -90,12 +174,109 @@
             labels,
             datasets: [{ data: values }],
           },
+          options: {
+            plugins: {
+              legend: {
+                labels: { color: "#0f172a" },
+              },
+            },
+          },
         });
       }
 
+      function updateKpi(summary) {
+        document.getElementById("incomeTotal").textContent = fmtUZS(summary.income_total_uzs);
+        document.getElementById("expenseTotal").textContent = fmtUZS(summary.expense_total_uzs);
+        document.getElementById("balanceTotal").textContent = fmtUZS(summary.balance_uzs);
+        document.getElementById("incomeCount").textContent = `записей: ${summary.income_entry_count}`;
+        document.getElementById("expenseCount").textContent = `записей: ${summary.expense_entry_count}`;
+
+        const balanceCard = document.getElementById("balanceCard");
+        balanceCard.classList.remove("balance-pos", "balance-neg");
+        balanceCard.classList.add(summary.balance_uzs >= 0 ? "balance-pos" : "balance-neg");
+      }
+
+      function renderCategoryList(summary) {
+        const list = document.getElementById("categoryList");
+        list.innerHTML = "";
+        if (summary.by_category.length === 0) {
+          const li = document.createElement("li");
+          li.textContent = "Нет данных по расходам за выбранный месяц";
+          list.appendChild(li);
+          return;
+        }
+        summary.by_category.forEach((row) => {
+          const li = document.createElement("li");
+          li.textContent = `${row.category_label_ru}: ${fmtUZS(row.total_uzs)}`;
+          list.appendChild(li);
+        });
+      }
+
+      function entryTypeLabel(entryType) {
+        return entryType === "income" ? "Доход" : "Расход";
+      }
+
+      function renderLedgerRow(entry) {
+        const key = `${entry.entry_type}:${entry.id}`;
+        const isEditing = editingEntryKey === key;
+
+        if (isEditing) {
+          const typeSelect = entry.entry_type === "expense"
+            ? `<select id="editRawKey">${categories.map((c) => `<option value="${c.key}" ${c.key === entry.raw_key ? "selected" : ""}>${c.label_ru}</option>`).join("")}</select>`
+            : `<select id="editRawKey">${incomeTypes.map((t) => `<option value="${t.key}" ${t.key === entry.raw_key ? "selected" : ""}>${t.label_ru} / ${t.label_uz}</option>`).join("")}</select>`;
+          return `
+            <div class="ledger-row editing" data-entry-type="${entry.entry_type}" data-entry-id="${entry.id}">
+              <div class="ledger-main">
+                <span class="badge ${entry.entry_type}">${entryTypeLabel(entry.entry_type)}</span>
+                ${typeSelect}
+                <input id="editAmount" type="number" min="1" step="1" value="${entry.amount_uzs}" />
+                <input id="editDate" type="date" value="${fmtDate(entry.date)}" />
+                <input id="editNote" type="text" maxlength="1024" value="${escapeHtml(entry.note || "")}" placeholder="Комментарий" />
+              </div>
+              <div class="ledger-actions sticky-actions">
+                <button class="mini success" data-action="save-edit" data-entry-type="${entry.entry_type}" data-entry-id="${entry.id}">Сохранить</button>
+                <button class="mini" data-action="cancel-edit">Отмена</button>
+              </div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="ledger-row" data-entry-type="${entry.entry_type}" data-entry-id="${entry.id}">
+            <div class="ledger-main">
+              <span class="badge ${entry.entry_type}">${entryTypeLabel(entry.entry_type)}</span>
+              <strong>${entry.label_ru}</strong>
+              <span class="amount">${fmtUZS(entry.amount_uzs)}</span>
+              <span class="date">${fmtDate(entry.date)}</span>
+              <span class="note">${escapeHtml(entry.note || "-")}</span>
+            </div>
+            <div class="ledger-actions sticky-actions">
+              <button class="mini" data-action="start-edit" data-entry-key="${key}">Редактировать</button>
+              <button class="mini danger" data-action="delete" data-entry-type="${entry.entry_type}" data-entry-id="${entry.id}">Удалить</button>
+            </div>
+          </div>
+        `;
+      }
+
+      async function loadLedger() {
+        const { year, month } = currentFilters();
+        const res = await fetch(`${apiBase}/ledger/month?year=${year}&month=${month}`, { headers });
+        const root = document.getElementById("ledgerList");
+        if (!res.ok) {
+          root.innerHTML = `<div class="empty">Не удалось загрузить операции</div>`;
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.entries.length) {
+          root.innerHTML = `<div class="empty">За выбранный месяц записей пока нет</div>`;
+          return;
+        }
+        root.innerHTML = data.entries.map(renderLedgerRow).join("");
+      }
+
       async function loadSummary() {
-        const year = document.getElementById("year").value;
-        const month = document.getElementById("month").value;
+        const { year, month } = currentFilters();
 
         const [summaryRes, chartRes] = await Promise.all([
           fetch(`${apiBase}/summary/month?year=${year}&month=${month}`, { headers }),
@@ -103,24 +284,20 @@
         ]);
 
         if (!summaryRes.ok) {
-          document.getElementById("monthTotal").textContent = "Ошибка доступа или загрузки данных";
+          document.getElementById("expenseTotal").textContent = "Ошибка доступа или загрузки данных";
           return;
         }
 
         const summary = await summaryRes.json();
         const chartData = await chartRes.json();
 
-        document.getElementById("monthTotal").textContent = `Всего за месяц: ${fmtUZS(summary.month_total_uzs)} (записей: ${summary.entry_count})`;
-
-        const list = document.getElementById("categoryList");
-        list.innerHTML = "";
-        summary.by_category.forEach((row) => {
-          const li = document.createElement("li");
-          li.textContent = `${row.category_label_ru}: ${fmtUZS(row.total_uzs)}`;
-          list.appendChild(li);
-        });
-
+        updateKpi(summary);
+        renderCategoryList(summary);
         drawChart(chartData.labels, chartData.values);
+      }
+
+      async function refreshAll() {
+        await Promise.all([loadSummary(), loadLedger()]);
       }
 
       document.getElementById("expenseForm").addEventListener("submit", async (e) => {
@@ -142,20 +319,126 @@
         if (res.ok) {
           status.textContent = "Расход сохранен";
           e.target.reset();
-          await loadSummary();
+          await refreshAll();
         } else {
           const err = await res.json();
           status.textContent = `Ошибка: ${err.detail || "не удалось сохранить"}`;
         }
       });
 
-      document.getElementById("reloadBtn").addEventListener("click", loadSummary);
+      document.getElementById("incomeForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const payload = {
+          income_type_key: document.getElementById("incomeType").value,
+          amount_uzs: Number(document.getElementById("incomeAmount").value),
+          income_date: document.getElementById("incomeDate").value,
+          note: document.getElementById("incomeNote").value || null,
+        };
+
+        const res = await fetch(`${apiBase}/incomes`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+
+        const status = document.getElementById("incomeFormStatus");
+        if (res.ok) {
+          status.textContent = "Доход сохранен / Daromad saqlandi";
+          e.target.reset();
+          await refreshAll();
+        } else {
+          const err = await res.json();
+          status.textContent = `Ошибка: ${err.detail || "не удалось сохранить"}`;
+        }
+      });
+
+      document.getElementById("reloadBtn").addEventListener("click", refreshAll);
+
+      document.getElementById("ledgerList").addEventListener("click", async (e) => {
+        const button = e.target.closest("button[data-action]");
+        if (!button) return;
+
+        const action = button.dataset.action;
+        const status = document.getElementById("ledgerStatus");
+
+        if (action === "start-edit") {
+          editingEntryKey = button.dataset.entryKey;
+          await loadLedger();
+          return;
+        }
+
+        if (action === "cancel-edit") {
+          editingEntryKey = null;
+          await loadLedger();
+          return;
+        }
+
+        const entryType = button.dataset.entryType;
+        const entryId = button.dataset.entryId;
+
+        if (action === "delete") {
+          if (!window.confirm("Удалить запись?")) return;
+          const endpoint = entryType === "expense" ? "expenses" : "incomes";
+          const res = await fetch(`${apiBase}/${endpoint}/${entryId}`, {
+            method: "DELETE",
+            headers,
+          });
+          if (res.ok) {
+            status.textContent = "Запись удалена";
+            editingEntryKey = null;
+            await refreshAll();
+          } else {
+            const err = await res.json();
+            status.textContent = `Ошибка: ${err.detail || "не удалось удалить"}`;
+          }
+          return;
+        }
+
+        if (action === "save-edit") {
+          const endpoint = entryType === "expense" ? "expenses" : "incomes";
+          const rawKey = document.getElementById("editRawKey").value;
+          const amount = Number(document.getElementById("editAmount").value);
+          const dateVal = document.getElementById("editDate").value;
+          const noteVal = document.getElementById("editNote").value;
+
+          const payload = entryType === "expense"
+            ? {
+                category_key: rawKey,
+                amount_uzs: amount,
+                expense_date: dateVal,
+                note: noteVal || null,
+              }
+            : {
+                income_type_key: rawKey,
+                amount_uzs: amount,
+                income_date: dateVal,
+                note: noteVal || null,
+              };
+
+          const res = await fetch(`${apiBase}/${endpoint}/${entryId}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            status.textContent = "Запись обновлена";
+            editingEntryKey = null;
+            await refreshAll();
+          } else {
+            const err = await res.json();
+            status.textContent = `Ошибка: ${err.detail || "не удалось обновить"}`;
+          }
+        }
+      });
 
       (async function init() {
         const today = new Date().toISOString().slice(0, 10);
         document.getElementById("expenseDate").value = today;
+        document.getElementById("incomeDate").value = today;
         await loadCategories();
-        await loadSummary();
+        await loadIncomeTypes();
+        await refreshAll();
       })();
     </script>
   </body>
