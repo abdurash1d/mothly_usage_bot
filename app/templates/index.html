@@ -151,6 +151,14 @@
       const month = Number(document.getElementById("month").value);
       return { year, month };
     }
+    function monthNameRu(month) {
+      // month is 1..12; new Date(year, monthIndex, 1) wants 0..11
+      try {
+        return new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(new Date(2020, (month - 1), 1));
+      } catch {
+        return "";
+      }
+    }
 
     // ---- Categories / income types ----
     async function loadCategories() {
@@ -204,8 +212,10 @@
       if (income === 0 && spent === 0) {
         ring.style.background = "var(--ring-track)";
         ringAmount.textContent = "0";
-        ringSub.textContent = "Нет данных";
-        legendSaved.innerHTML = "—";
+        const { month } = currentFilters();
+        const name = monthNameRu(month);
+        ringSub.textContent = name ? `Нет данных за ${name}` : "Нет данных";
+        legendSaved.innerHTML = "Добавьте первый расход";
         return;
       }
       if (income === 0) {
@@ -221,7 +231,7 @@
         const pctOver = Math.round((spent / income) * 100);
         ringSub.textContent = `${pctOver}% дохода`;
         const over = spent - income;
-        legendSaved.innerHTML = `<span class="saved-neg">🔴 Перерасход <b>${fmtAmount(over)}</b></span>`;
+        legendSaved.innerHTML = `<span class="saved-neg">🔴 Перерасход <b>−${fmtAmount(over)}</b></span>`;
         return;
       }
       // normal
