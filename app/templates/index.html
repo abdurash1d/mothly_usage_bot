@@ -13,8 +13,8 @@
     <!-- Month picker -->
     <header class="topbar">
       <div class="month-picker">
-        <input id="year" type="number" min="2020" max="2100" value="{{ year }}" />
-        <input id="month" type="number" min="1" max="12" value="{{ month }}" />
+        <input id="year" type="number" min="2020" max="2100" value="{{ year }}" aria-label="Год" />
+        <input id="month" type="number" min="1" max="12" value="{{ month }}" aria-label="Месяц" />
         <button id="reloadBtn" type="button" class="btn-ghost">Обновить</button>
       </div>
     </header>
@@ -43,8 +43,8 @@
     <!-- Add (segmented Расход/Доход) -->
     <section class="add">
       <div class="segmented" role="tablist">
-        <button type="button" class="seg-btn active" data-tab="expense">Расход</button>
-        <button type="button" class="seg-btn" data-tab="income">Доход</button>
+        <button type="button" class="seg-btn active" role="tab" aria-selected="true" data-tab="expense">Расход</button>
+        <button type="button" class="seg-btn" role="tab" aria-selected="false" data-tab="income">Доход</button>
       </div>
 
       <form id="expenseForm" class="form">
@@ -141,7 +141,6 @@
     // ---- Helpers ----
     const ru = new Intl.NumberFormat("ru-RU");
     function fmtAmount(n) { return ru.format(n || 0); }
-    function fmtUZS(n) { return fmtAmount(n) + " сум"; }
     function escapeHtml(s) {
       return String(s ?? "").replace(/[&<>"']/g, c => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -156,6 +155,10 @@
     // ---- Categories / income types ----
     async function loadCategories() {
       const res = await fetch(`${apiBase}/categories`);
+      if (!res.ok) {
+        document.getElementById("formStatus").textContent = "Не удалось загрузить категории.";
+        return;
+      }
       const data = await res.json();
       categories = data.categories || [];
       const select = document.getElementById("category");
@@ -169,6 +172,10 @@
     }
     async function loadIncomeTypes() {
       const res = await fetch(`${apiBase}/income-types`);
+      if (!res.ok) {
+        document.getElementById("incomeFormStatus").textContent = "Не удалось загрузить типы дохода.";
+        return;
+      }
       const data = await res.json();
       incomeTypes = data.income_types || [];
       const select = document.getElementById("incomeType");
@@ -305,7 +312,7 @@
         <div class="ledger-row editing">
           <div class="ledger-edit">
             <select id="editRawKey">${optionsHtml}</select>
-            <input id="editAmount" type="number" min="1" step="1" value="${entry.amount_uzs}" />
+            <input id="editAmount" type="number" min="1" step="1" value="${escapeHtml(String(entry.amount_uzs))}" />
             <input id="editDate" type="date" value="${escapeHtml(entry.date)}" />
             <input id="editNote" type="text" maxlength="1024" value="${escapeHtml(entry.note || "")}" placeholder="заметка" />
           </div>
@@ -344,6 +351,7 @@
       segBtns.forEach(btn => {
         btn.addEventListener("click", () => {
           segBtns.forEach(b => b.classList.toggle("active", b === btn));
+          segBtns.forEach(b => b.setAttribute("aria-selected", b === btn ? "true" : "false"));
           const tab = btn.dataset.tab;
           document.getElementById("expenseForm").classList.toggle("hidden", tab !== "expense");
           document.getElementById("incomeForm").classList.toggle("hidden", tab !== "income");
@@ -361,10 +369,11 @@
           expense_date: document.getElementById("expenseDate").value,
           note: document.getElementById("note").value || null,
         };
+        const status = document.getElementById("formStatus");
+        status.textContent = "";
         const res = await fetch(`${apiBase}/expenses`, {
           method: "POST", headers, body: JSON.stringify(payload),
         });
-        const status = document.getElementById("formStatus");
         if (res.ok) {
           status.textContent = "Сохранено.";
           document.getElementById("amount").value = "";
@@ -382,10 +391,11 @@
           income_date: document.getElementById("incomeDate").value,
           note: document.getElementById("incomeNote").value || null,
         };
+        const status = document.getElementById("incomeFormStatus");
+        status.textContent = "";
         const res = await fetch(`${apiBase}/incomes`, {
           method: "POST", headers, body: JSON.stringify(payload),
         });
-        const status = document.getElementById("incomeFormStatus");
         if (res.ok) {
           status.textContent = "Сохранено.";
           document.getElementById("incomeAmount").value = "";
