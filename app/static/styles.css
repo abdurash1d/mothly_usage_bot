@@ -1,31 +1,46 @@
 /* ===== Design tokens ===== */
+/* Turquoise-tinted theme. Light = pale turquoise, dark = dark turquoise.
+   Theme follows the system by default; an explicit data-theme on <html>
+   (set by the toggle) overrides it and is persisted in localStorage. */
 :root {
-  --bg: #f5f7fa;
+  --bg: #e8f4f4;
   --surface: #ffffff;
-  --surface-2: #eef2f7;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --muted: #64748b;
-  --brand: #0ea5e9;
-  --brand-strong: #0284c7;
+  --surface-2: #d7ebeb;
+  --border: #c5dedd;
+  --text: #0f2b2b;
+  --muted: #5c7e7e;
+  --brand: #0d9488;
+  --brand-strong: #0f766e;
   --income: #16a34a;
   --expense: #e11d48;
-  --ring-track: #e2e8f0;
-  --shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  --ring-track: #c5dedd;
+  --shadow: 0 4px 14px rgba(13, 59, 59, 0.08);
   --radius: 12px;
   --on-brand: #ffffff;
 }
+
+/* Shared dark-turquoise tokens (applied for system-dark and manual dark). */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b1220;
-    --surface: #111a2e;
-    --surface-2: #182239;
-    --border: #1f2a44;
-    --text: #e2e8f0;
-    --muted: #94a3b8;
-    --ring-track: #1f2a44;
-    --shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  :root:not([data-theme]) {
+    --bg: #0e3a3a;
+    --surface: #114545;
+    --surface-2: #17514f;
+    --border: #205e5c;
+    --text: #e3f1f0;
+    --muted: #8fb4b2;
+    --ring-track: #205e5c;
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   }
+}
+:root[data-theme="dark"] {
+  --bg: #0e3a3a;
+  --surface: #114545;
+  --surface-2: #17514f;
+  --border: #205e5c;
+  --text: #e3f1f0;
+  --muted: #8fb4b2;
+  --ring-track: #205e5c;
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 /* ===== Base ===== */
@@ -318,6 +333,7 @@ input, select, button, textarea { font-family: inherit; }
   font-weight: 800;
   letter-spacing: -0.01em;
 }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
 .lang-toggle {
   background: var(--surface);
   color: var(--text);
@@ -329,6 +345,27 @@ input, select, button, textarea { font-family: inherit; }
   cursor: pointer;
 }
 .lang-toggle:hover { background: var(--surface-2); }
+.icon-toggle {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.icon-toggle:hover { background: var(--surface-2); }
+.icon-toggle:focus-visible,
+.lang-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 
 /* ===== Tabs ===== */
 .tabbar {

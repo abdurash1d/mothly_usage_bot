@@ -472,6 +472,33 @@
     });
   }
 
+  // ---- Theme (light / dark) ----
+  function effectiveTheme() {
+    const forced = document.documentElement.getAttribute("data-theme");
+    if (forced === "dark" || forced === "light") return forced;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark" : "light";
+  }
+  function syncThemeIcon() {
+    // Show the icon representing the current mode: moon in dark, sun in light.
+    $("themeToggle").textContent = effectiveTheme() === "dark" ? "☾" : "☀";
+  }
+  function setupThemeToggle() {
+    syncThemeIcon();
+    $("themeToggle").addEventListener("click", () => {
+      const next = effectiveTheme() === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("theme", next); } catch (e) {}
+      syncThemeIcon();
+    });
+    // Keep the icon in sync if the system theme changes while in auto mode.
+    if (window.matchMedia) {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (!document.documentElement.getAttribute("data-theme")) syncThemeIcon();
+      });
+    }
+  }
+
   function setupSegmented() {
     const segBtns = document.querySelectorAll(".seg-btn");
     segBtns.forEach((btn) => {
@@ -602,6 +629,7 @@
 
     setupTabs();
     setupLangToggle();
+    setupThemeToggle();
     setupSegmented();
     setupForms();
     setupReload();

@@ -5,15 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>Финансы</title>
   <link rel="stylesheet" href="/static/styles.css" />
+  <script>
+    // Apply saved theme before first paint to avoid a flash.
+    try {
+      var savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark" || savedTheme === "light") {
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      }
+    } catch (e) {}
+  </script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
   <div class="container">
 
-    <!-- Top bar: brand + language toggle -->
+    <!-- Top bar: brand + theme/language toggles -->
     <header class="topbar">
       <div class="brand" data-i18n="app_title">Финансы</div>
-      <button id="langToggle" type="button" class="lang-toggle" aria-label="Language">RU</button>
+      <div class="topbar-actions">
+        <button id="themeToggle" type="button" class="icon-toggle" aria-label="Theme">☾</button>
+        <button id="langToggle" type="button" class="lang-toggle" aria-label="Language">RU</button>
+      </div>
     </header>
 
     <!-- Tabs -->
