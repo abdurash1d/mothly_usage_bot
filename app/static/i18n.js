@@ -86,6 +86,7 @@
 
       // Settings
       tab_settings: "Настройки",
+      back: "Назад",
       greeting: "Привет, {name} 👋",
       settings_profile: "ПРОФИЛЬ",
       f_display_name: "Ваше имя",
@@ -105,6 +106,11 @@
       settings_saved: "Сохранено.",
       err_save_settings: "Не удалось сохранить настройки.",
       err_load_settings: "Не удалось загрузить настройки.",
+      settings_goal: "ЦЕЛЬ НАКОПЛЕНИЯ",
+      f_goal_name: "Название цели",
+      f_goal_amount: "Сумма цели (сум)",
+      goal_progress: "{saved} из {target}",
+      budgets_progress_title: "БЮДЖЕТЫ",
 
       // Debts
       debts_net: "Чистый баланс",
@@ -215,6 +221,7 @@
 
       // Settings
       tab_settings: "Sozlamalar",
+      back: "Orqaga",
       greeting: "Salom, {name} 👋",
       settings_profile: "PROFIL",
       f_display_name: "Ismingiz",
@@ -234,6 +241,11 @@
       settings_saved: "Saqlandi.",
       err_save_settings: "Sozlamalarni saqlab bo‘lmadi.",
       err_load_settings: "Sozlamalarni yuklab bo‘lmadi.",
+      settings_goal: "JAMG‘ARMA MAQSADI",
+      f_goal_name: "Maqsad nomi",
+      f_goal_amount: "Maqsad summasi (so‘m)",
+      goal_progress: "{target} dan {saved}",
+      budgets_progress_title: "BYUDJETLAR",
 
       // Debts
       debts_net: "Sof balans",

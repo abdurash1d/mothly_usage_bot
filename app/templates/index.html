@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Sora:wght@600;700;800&display=swap" />
   <link rel="stylesheet" href="/static/styles.css" />
   <script>
     // Apply saved theme before first paint to avoid a flash.
@@ -26,7 +26,7 @@
 
     <!-- Top bar: brand + theme/language toggles -->
     <header class="topbar">
-      <div class="brand">
+      <div class="brand" id="brandHome" role="button" tabindex="0" aria-label="Home">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 48 48" width="30" height="30">
             <defs>
@@ -163,9 +163,24 @@
         <div class="savings-verdict" id="savingsVerdict"></div>
       </section>
 
+      <section class="card goal-card" id="goalCard" hidden>
+        <div class="section-label" data-i18n="settings_goal">ЦЕЛЬ НАКОПЛЕНИЯ</div>
+        <div class="goal-head">
+          <span class="goal-name" id="goalName"></span>
+          <span class="goal-pct" id="goalPct"></span>
+        </div>
+        <div class="goal-bar"><div class="goal-fill" id="goalFill"></div></div>
+        <div class="goal-sub" id="goalSub"></div>
+      </section>
+
       <section class="card">
         <div class="section-label" data-i18n="trend_title">ДОХОД И РАСХОД · 6 МЕС</div>
         <div id="trendChart" class="trend-chart"></div>
+      </section>
+
+      <section class="card" id="budgetProgressCard" hidden>
+        <div class="section-label" data-i18n="budgets_progress_title">БЮДЖЕТЫ</div>
+        <div id="budgetProgressList" class="budget-progress-list"></div>
       </section>
 
       <section class="card">
@@ -213,6 +228,8 @@
     <!-- ===== SETTINGS PANEL ===== -->
     <div id="tab-settings" class="tab-panel" role="tabpanel" hidden>
 
+      <button id="settingsBack" type="button" class="back-btn">‹ <span data-i18n="back">Назад</span></button>
+
       <section class="card settings-section">
         <div class="section-label" data-i18n="settings_profile">ПРОФИЛЬ</div>
         <label class="set-field">
@@ -237,6 +254,18 @@
             <input id="setEmergency" type="number" min="1" max="24" step="1" />
           </label>
         </div>
+      </section>
+
+      <section class="card settings-section">
+        <div class="section-label" data-i18n="settings_goal">ЦЕЛЬ НАКОПЛЕНИЯ</div>
+        <label class="set-field">
+          <span data-i18n="f_goal_name">Название цели</span>
+          <input id="setGoalName" type="text" maxlength="120" data-i18n-ph="optional" placeholder="необязательно" />
+        </label>
+        <label class="set-field">
+          <span data-i18n="f_goal_amount">Сумма цели (сум)</span>
+          <input id="setGoalAmount" type="number" min="0" step="1000" />
+        </label>
       </section>
 
       <section class="card settings-section">

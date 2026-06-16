@@ -37,12 +37,14 @@
   let incomeTypes = [];
   let editingEntryKey = null;
   let lastSummary = null;
+  let lastLedger = [];
   let lastDebts = null;
   let debtsLoaded = false;
   let lastInsights = null;
   let lastTrend = null;
   let insightsLoaded = false;
   let lastSettings = null;
+  let previousTab = "report";
   let modalMode = null; // {kind:'debt',direction} | {kind:'repayment',debtId,person}
 
   const INSIGHT_ICONS = {
@@ -116,7 +118,7 @@
     fillCategorySelect();
     fillIncomeSelect();
     if (lastSummary) { renderRing(lastSummary); renderCategoryBars(lastSummary); }
-    loadLedger();
+    renderLedgerList(lastLedger);
     if (lastDebts) renderDebts(lastDebts);
     if (lastInsights) renderInsights(lastInsights);
     if (lastTrend) renderTrend(lastTrend);
@@ -313,24 +315,47 @@
         </div>
       </div>`;
   }
+  function renderLedgerList(entries) {
+    const list = $("ledgerList");
+    list.innerHTML = (entries && entries.length)
+      ? entries.map(renderLedgerRow).join("")
+      : `<div class="empty">${escapeHtml(t("no_records"))}</div>`;
+  }
   async function loadLedger() {
     const { year, month } = currentFilters();
-    const list = $("ledgerList");
     try {
       const res = await fetch(`${apiBase}/ledger/month?year=${year}&month=${month}`, { headers });
       if (!res.ok) throw new Error();
-      const entries = (await res.json()).entries || [];
-      list.innerHTML = entries.length === 0
-        ? `<div class="empty">${escapeHtml(t("no_records"))}</div>`
-        : entries.map(renderLedgerRow).join("");
+      lastLedger = (await res.json()).entries || [];
+      renderLedgerList(lastLedger);
     } catch {
-      list.innerHTML = `<div class="empty">${escapeHtml(t("err_load_history"))}</div>`;
+      $("ledgerList").innerHTML = `<div class="empty">${escapeHtml(t("err_load_history"))}</div>`;
     }
   }
 
   async function refreshReport() {
     await Promise.all([loadSummary(), loadLedger()]);
     refreshInsightsIfLoaded();
+  }
+
+  // Single round-trip for everything the first paint of the report needs.
+  async function loadBootstrap() {
+    const { year, month } = currentFilters();
+    try {
+      const res = await fetch(`${apiBase}/bootstrap?year=${year}&month=${month}`, { headers });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      categories = d.categories || []; fillCategorySelect();
+      incomeTypes = d.income_types || []; fillIncomeSelect();
+      lastSettings = d.settings || null; renderGreeting();
+      lastSummary = d.summary; renderRing(lastSummary); renderCategoryBars(lastSummary);
+      lastLedger = d.ledger || []; renderLedgerList(lastLedger);
+    } catch {
+      // Fallback to individual loaders if bootstrap is unavailable.
+      Promise.all([loadCategories(), loadIncomeTypes()]).then(() => loadLedger());
+      loadSummary();
+      loadSettings();
+    }
   }
 
   // ---- Debts ----
@@ -430,8 +455,39 @@
     }
     verdict.textContent = t("savings_" + data.savings_level);
   }
+  function renderGoal(goal) {
+    const card = $("goalCard");
+    if (!goal) { card.hidden = true; return; }
+    card.hidden = false;
+    $("goalName").textContent = goal.name || t("settings_goal");
+    $("goalPct").textContent = goal.pct + "%";
+    $("goalFill").style.width = Math.max(0, Math.min(100, goal.pct)) + "%";
+    $("goalSub").textContent = t("goal_progress", {
+      saved: fmtAmount(goal.saved_uzs), target: fmtAmount(goal.target_uzs),
+    });
+  }
+  function renderBudgetProgress(budgets) {
+    const card = $("budgetProgressCard");
+    const list = $("budgetProgressList");
+    if (!budgets || !budgets.length) { card.hidden = true; return; }
+    card.hidden = false;
+    list.innerHTML = budgets.map((b) => {
+      const over = b.spent_uzs > b.limit_uzs;
+      const w = Math.max(0, Math.min(100, b.pct));
+      return `
+        <div class="bp-row">
+          <div class="bp-meta">
+            <span>${escapeHtml(catLabelByKey(b.category_key))}</span>
+            <span class="${over ? "over" : ""}">${fmtAmount(b.spent_uzs)} / ${fmtAmount(b.limit_uzs)} · ${b.pct}%</span>
+          </div>
+          <div class="bp-bar"><div class="bp-fill${over ? " over" : ""}" style="width:${w}%"></div></div>
+        </div>`;
+    }).join("");
+  }
   function renderInsights(data) {
     renderSavingsHero(data);
+    renderGoal(data.goal);
+    renderBudgetProgress(data.budgets);
     const list = $("insightList");
     list.innerHTML = "";
     for (const i of data.insights || []) {
@@ -599,23 +655,28 @@
   }
 
   // ---- Setup ----
+  function currentActiveTab() {
+    const active = document.querySelector(".tab-btn.active");
+    return active ? active.dataset.tab : "report";
+  }
+  function goToTab(name) {
+    document.querySelectorAll(".tab-btn").forEach((b) => {
+      const on = b.dataset.tab === name;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    $("tab-report").hidden = name !== "report";
+    $("tab-insights").hidden = name !== "insights";
+    $("tab-debts").hidden = name !== "debts";
+    $("tab-settings").hidden = true;
+    $("settingsBtn").classList.remove("active");
+    hideTgBack();
+    if (name === "debts" && !debtsLoaded) loadDebts();
+    if (name === "insights") { loadInsights(); loadTrend(); }
+  }
   function setupTabs() {
     document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const tab = btn.dataset.tab;
-        document.querySelectorAll(".tab-btn").forEach((b) => {
-          const on = b === btn;
-          b.classList.toggle("active", on);
-          b.setAttribute("aria-selected", on ? "true" : "false");
-        });
-        $("tab-report").hidden = tab !== "report";
-        $("tab-insights").hidden = tab !== "insights";
-        $("tab-debts").hidden = tab !== "debts";
-        $("tab-settings").hidden = true;
-        $("settingsBtn").classList.remove("active");
-        if (tab === "debts" && !debtsLoaded) loadDebts();
-        if (tab === "insights") { loadInsights(); loadTrend(); }
-      });
+      btn.addEventListener("click", () => goToTab(btn.dataset.tab));
     });
   }
 
@@ -822,6 +883,8 @@
     $("setAbout").value = lastSettings.about || "";
     $("setSavings").value = lastSettings.savings_target_pct;
     $("setEmergency").value = lastSettings.emergency_months;
+    $("setGoalName").value = lastSettings.savings_goal_name || "";
+    $("setGoalAmount").value = lastSettings.savings_goal_uzs || "";
     buildBudgetList();
     updateThemeSeg();
     updateLangSeg();
@@ -850,6 +913,8 @@
       about: $("setAbout").value || null,
       savings_target_pct: Number($("setSavings").value),
       emergency_months: Number($("setEmergency").value),
+      savings_goal_name: $("setGoalName").value || null,
+      savings_goal_uzs: Number($("setGoalAmount").value) || 0,
       category_budgets: budgets,
     };
     try {
@@ -863,17 +928,28 @@
       status.textContent = t("err_save_settings");
     }
   }
+  function showTgBack() { if (tg && tg.BackButton) tg.BackButton.show(); }
+  function hideTgBack() { if (tg && tg.BackButton) tg.BackButton.hide(); }
+  function goBack() { goToTab(previousTab || "report"); }
   async function openSettings() {
+    previousTab = currentActiveTab();
     ["report", "insights", "debts"].forEach((p) => { $("tab-" + p).hidden = true; });
     document.querySelectorAll(".tab-btn").forEach((b) => { b.classList.remove("active"); b.setAttribute("aria-selected", "false"); });
     $("tab-settings").hidden = false;
     $("settingsBtn").classList.add("active");
+    showTgBack();
     if (!lastSettings) await loadSettings();
     fillSettingsForm();
   }
   function setupSettings() {
     $("settingsBtn").addEventListener("click", openSettings);
+    $("settingsBack").addEventListener("click", goBack);
     $("saveSettingsBtn").addEventListener("click", saveSettings);
+    $("brandHome").addEventListener("click", () => goToTab("report"));
+    $("brandHome").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToTab("report"); }
+    });
+    if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
     $("themeSeg").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-theme-mode]");
       if (b) setThemeMode(b.dataset.themeMode);
@@ -902,8 +978,6 @@
     setupModal();
     setupSettings();
 
-    Promise.all([loadCategories(), loadIncomeTypes()]).then(() => loadLedger());
-    loadSummary();
-    loadSettings();
+    loadBootstrap();
   })();
 })();
