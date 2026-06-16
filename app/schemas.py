@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 DEBT_DIRECTIONS = {"lent", "borrowed"}
 
-from app.models.categories import CategoryKey, CATEGORY_LABELS_RU, category_options
+from app.models.categories import CategoryKey, CATEGORY_LABELS_RU, CATEGORY_LABELS_UZ, category_options
 from app.models.income_types import IncomeType, INCOME_LABELS_RU, INCOME_LABELS_UZ, income_type_options
 
 
@@ -28,6 +28,7 @@ class ExpenseOut(BaseModel):
     id: int
     category_key: str
     category_label_ru: str
+    category_label_uz: str
     amount_uzs: int
     expense_date: date
     note: Optional[str]
@@ -53,6 +54,7 @@ class ExpenseUpdate(BaseModel):
 class CategorySummary(BaseModel):
     category_key: str
     category_label_ru: str
+    category_label_uz: str
     total_uzs: int
 
 
@@ -134,6 +136,7 @@ class LedgerRow(BaseModel):
     amount_uzs: int
     note: Optional[str]
     label_ru: str
+    label_uz: str
     raw_key: str
 
 
@@ -229,6 +232,10 @@ class DebtsResponse(BaseModel):
 
 def category_key_to_label(key: str) -> str:
     return CATEGORY_LABELS_RU[CategoryKey(key)]
+
+
+def category_key_to_label_uz(key: str) -> str:
+    return CATEGORY_LABELS_UZ[CategoryKey(key)]
 
 
 def categories_payload() -> CategoriesResponse:
