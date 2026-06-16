@@ -44,6 +44,7 @@
   let lastTrend = null;
   let insightsLoaded = false;
   let lastSettings = null;
+  let previousTab = "report";
   let modalMode = null; // {kind:'debt',direction} | {kind:'repayment',debtId,person}
 
   const INSIGHT_ICONS = {
@@ -654,23 +655,28 @@
   }
 
   // ---- Setup ----
+  function currentActiveTab() {
+    const active = document.querySelector(".tab-btn.active");
+    return active ? active.dataset.tab : "report";
+  }
+  function goToTab(name) {
+    document.querySelectorAll(".tab-btn").forEach((b) => {
+      const on = b.dataset.tab === name;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    $("tab-report").hidden = name !== "report";
+    $("tab-insights").hidden = name !== "insights";
+    $("tab-debts").hidden = name !== "debts";
+    $("tab-settings").hidden = true;
+    $("settingsBtn").classList.remove("active");
+    hideTgBack();
+    if (name === "debts" && !debtsLoaded) loadDebts();
+    if (name === "insights") { loadInsights(); loadTrend(); }
+  }
   function setupTabs() {
     document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const tab = btn.dataset.tab;
-        document.querySelectorAll(".tab-btn").forEach((b) => {
-          const on = b === btn;
-          b.classList.toggle("active", on);
-          b.setAttribute("aria-selected", on ? "true" : "false");
-        });
-        $("tab-report").hidden = tab !== "report";
-        $("tab-insights").hidden = tab !== "insights";
-        $("tab-debts").hidden = tab !== "debts";
-        $("tab-settings").hidden = true;
-        $("settingsBtn").classList.remove("active");
-        if (tab === "debts" && !debtsLoaded) loadDebts();
-        if (tab === "insights") { loadInsights(); loadTrend(); }
-      });
+      btn.addEventListener("click", () => goToTab(btn.dataset.tab));
     });
   }
 
@@ -922,17 +928,28 @@
       status.textContent = t("err_save_settings");
     }
   }
+  function showTgBack() { if (tg && tg.BackButton) tg.BackButton.show(); }
+  function hideTgBack() { if (tg && tg.BackButton) tg.BackButton.hide(); }
+  function goBack() { goToTab(previousTab || "report"); }
   async function openSettings() {
+    previousTab = currentActiveTab();
     ["report", "insights", "debts"].forEach((p) => { $("tab-" + p).hidden = true; });
     document.querySelectorAll(".tab-btn").forEach((b) => { b.classList.remove("active"); b.setAttribute("aria-selected", "false"); });
     $("tab-settings").hidden = false;
     $("settingsBtn").classList.add("active");
+    showTgBack();
     if (!lastSettings) await loadSettings();
     fillSettingsForm();
   }
   function setupSettings() {
     $("settingsBtn").addEventListener("click", openSettings);
+    $("settingsBack").addEventListener("click", goBack);
     $("saveSettingsBtn").addEventListener("click", saveSettings);
+    $("brandHome").addEventListener("click", () => goToTab("report"));
+    $("brandHome").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToTab("report"); }
+    });
+    if (tg && tg.BackButton) tg.BackButton.onClick(goBack);
     $("themeSeg").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-theme-mode]");
       if (b) setThemeMode(b.dataset.themeMode);

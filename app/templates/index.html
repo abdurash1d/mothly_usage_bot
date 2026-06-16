@@ -26,7 +26,7 @@
 
     <!-- Top bar: brand + theme/language toggles -->
     <header class="topbar">
-      <div class="brand">
+      <div class="brand" id="brandHome" role="button" tabindex="0" aria-label="Home">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 48 48" width="30" height="30">
             <defs>
@@ -227,6 +227,8 @@
     </div>
     <!-- ===== SETTINGS PANEL ===== -->
     <div id="tab-settings" class="tab-panel" role="tabpanel" hidden>
+
+      <button id="settingsBack" type="button" class="back-btn">‹ <span data-i18n="back">Назад</span></button>
 
       <section class="card settings-section">
         <div class="section-label" data-i18n="settings_profile">ПРОФИЛЬ</div>

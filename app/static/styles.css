@@ -153,7 +153,9 @@ input, select, button, textarea { font-family: inherit; }
   justify-content: space-between;
   padding-top: 2px;
 }
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+.brand:active { transform: scale(0.97); }
+.brand:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; border-radius: 10px; }
 .brand-mark {
   display: inline-flex;
   filter: drop-shadow(0 4px 10px rgba(45, 212, 191, 0.25));
@@ -703,6 +705,26 @@ input, select, button, textarea { font-family: inherit; }
 .icon-toggle.active { border-color: var(--brand); box-shadow: var(--glow); color: var(--brand); }
 
 /* ===== Settings ===== */
+.back-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 16px 7px 12px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--inset-hi);
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.back-btn:hover { border-color: var(--border-strong); }
+.back-btn:active { transform: scale(0.96); }
+.back-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .settings-section { display: flex; flex-direction: column; gap: 12px; }
 .set-field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
 .set-row-2 { display: flex; gap: 10px; }

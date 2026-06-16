@@ -86,6 +86,7 @@
 
       // Settings
       tab_settings: "Настройки",
+      back: "Назад",
       greeting: "Привет, {name} 👋",
       settings_profile: "ПРОФИЛЬ",
       f_display_name: "Ваше имя",
@@ -220,6 +221,7 @@
 
       // Settings
       tab_settings: "Sozlamalar",
+      back: "Orqaga",
       greeting: "Salom, {name} 👋",
       settings_profile: "PROFIL",
       f_display_name: "Ismingiz",
